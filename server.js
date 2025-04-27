@@ -37,6 +37,10 @@ io.on('connection', (socket) => {
         delete players[socket.id];
         io.emit('playerDisconnected', socket.id);
     });
+
+    socket.on('chat message', (msg) => {
+        io.emit('chat message', msg);
+      });
 });
 
 app.use(express.static('public'));

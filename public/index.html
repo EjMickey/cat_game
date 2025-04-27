@@ -20,7 +20,23 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-const socket = io();
+    const socket = io();
+
+    document.getElementById('chat-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      if (input.value) {
+        socket.emit('chat message', input.value);
+        input.value = '';
+      }
+    });
+    
+    socket.on('chat message', function(msg) {
+      const item = document.createElement('li');
+      item.textContent = msg;
+      document.getElementById('messages').appendChild(item);
+    });
+    
 
 const players = {};
 
@@ -92,5 +108,13 @@ function gameLoop() {
 
 gameLoop();
 </script>
+<div id="chat">
+    <ul id="messages"></ul>
+    <form id="chat-form">
+      <input id="chat-input" autocomplete="off" placeholder="Napisz wiadomość..." />
+      <button>Wyślij</button>
+    </form>
+  </div>
+  
 </body>
 </html>
