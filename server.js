@@ -4,6 +4,7 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 
 const players = {};
+const max_speed = 3;
 
 function checkCollision(player1, player2) {
     const distance = Math.sqrt(
@@ -25,6 +26,21 @@ function checkLvlUp(player){
     else return false
 }
 
+function updateSpeed(player){
+    if(player.speedX>max_speed){
+        player.speedX = max_speed
+    }
+    if(player.speedX<-max_speed){
+        player.speedX = -max_speed
+    }
+    if(player.speedY>max_speed){
+        player.speedY = max_speed
+    }
+    if(player.speedY<-max_speed){
+        player.speedY = -max_speed
+    }
+}
+
 io.on('connection', (socket) => {
     console.log('Nowy gracz:', socket.id);
 
@@ -34,7 +50,9 @@ io.on('connection', (socket) => {
         y: Math.random() * 500,
         hp: 100,
         exp: 0,
-        lvl: 1
+        lvl: 1,
+        speedX: 0,
+        speedY: 0
     };
 
     // Wyślij aktualny stan do nowego gracza
@@ -47,8 +65,17 @@ io.on('connection', (socket) => {
     socket.on('move', (movement) => {
         if (players[socket.id]) {
             // Aktualizacja pozycji gracza
-            players[socket.id].x += movement.x;
-            players[socket.id].y += movement.y;
+            if(movement.x == 0){
+                players[socket.id].speedX *= 0.95;
+            }
+            if(movement.y == 0){
+                players[socket.id].speedY *= 0.95;
+            }
+            players[socket.id].speedX += movement.x;
+            players[socket.id].speedY += movement.y;
+            updateSpeed(players[socket.id])
+            players[socket.id].x += players[socket.id].speedX;
+            players[socket.id].y += players[socket.id].speedY;
     
             // Sprawdzenie kolizji z innymi graczami
             for (const id in players) {
@@ -58,8 +85,10 @@ io.on('connection', (socket) => {
                         if(checkLvlUp(players[socket.id])){
                             io.emit('playerLvled', { id: socket.id, lvl: players[socket.id].lvl});
                         }
-                        players[socket.id].x -= movement.x;
-                        players[socket.id].y -= movement.y;
+                        players[socket.id].speedX = 0;
+                        players[socket.id].speedY = 0
+                        players[socket.id].x -= players[socket.id].speedX;
+                        players[socket.id].y -= players[socket.id].speedY;
                         players[socket.id].hp -= 1;
                         players[socket.id].exp += 2;
                         io.emit('playerHurt', { id: socket.id, exp: players[socket.id].exp, hp: players[socket.id].hp });

@@ -43,6 +43,12 @@
     </style>
 </head>
 <body>
+<div style="display:none;">
+    <img id="enemy" width="220" height="277" src="img/cat_enemy.jpg">
+</div>
+<div style="display:none;">
+    <img id="player" width="220" height="277" src="img/cat_player.png">
+</div>
 <canvas id="gameCanvas" width="1000" height="600"></canvas>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -128,14 +134,11 @@
 
     function sendMovement() {
         let movement = { x: 0, y: 0 };
-        if (keys['ArrowUp']) movement.y = -5;
-        if (keys['ArrowDown']) movement.y = 5;
-        if (keys['ArrowLeft']) movement.x = -5;
-        if (keys['ArrowRight']) movement.x = 5;
-
-        if (movement.x !== 0 || movement.y !== 0) {
-            socket.emit('move', movement);
-        }
+        if (keys['ArrowUp']) movement.y = -1;
+        if (keys['ArrowDown']) movement.y = 1;
+        if (keys['ArrowLeft']) movement.x = -1;
+        if (keys['ArrowRight']) movement.x = 1;
+        socket.emit('move', movement);
     }
 
     function gameLoop() {
@@ -145,9 +148,8 @@
             const player = players[id];
             if (!player) continue;
 
-            ctx.fillStyle = id === socket.id ? 'orange' : 'gray';
-            ctx.fillRect(player.x, player.y, 50, 50);
-
+            const img = id === socket.id ? document.getElementById('player') : document.getElementById('enemy');
+            ctx.drawImage(img, player.x, player.y)
             ctx.fillStyle = 'black';
             ctx.font = '14px Arial';
             ctx.fillText(`HP: ${player.hp} EXP: ${player.exp}`, player.x, player.y - 10);
