@@ -13,108 +13,153 @@
             display: block;
             background: #a0e7e5;
         }
+        #chat {
+            position: absolute;
+            top: 10px;
+            left: 1020px;
+            width: 300px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        #messages {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        #chat-input {
+            width: calc(100% - 60px);
+            padding: 5px;
+        }
+        button {
+            padding: 5px;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
-<canvas id="gameCanvas" width="800" height="600"></canvas>
+<canvas id="gameCanvas" width="1000" height="600"></canvas>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
+    const players = {};
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const chatForm = document.createElement('form');
+    const chatInput = document.createElement('input');
+    const chatButton = document.createElement('button');
+    const messagesList = document.createElement('ul');
+    const chatDiv = document.createElement('div');
 
-    document.getElementById('chat-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const input = document.getElementById('chat-input');
-      if (input.value) {
-        socket.emit('chat message', input.value);
-        input.value = '';
-      }
+    chatForm.id = 'chat-form';
+    chatInput.id = 'chat-input';
+    chatButton.textContent = 'Wyślij';
+    chatButton.type = 'submit';
+    chatDiv.id = 'chat';
+    messagesList.id = 'messages';
+
+    chatForm.appendChild(chatInput);
+    chatForm.appendChild(chatButton);
+    chatDiv.appendChild(messagesList);
+    chatDiv.appendChild(chatForm);
+    document.body.appendChild(chatDiv);
+
+    socket.on('currentPlayers', (serverPlayers) => {
+        Object.assign(players, serverPlayers);
     });
-    
-    socket.on('chat message', function(msg) {
-      const item = document.createElement('li');
-      item.textContent = msg;
-      document.getElementById('messages').appendChild(item);
+
+    socket.on('newPlayer', (playerData) => {
+        players[playerData.id] = playerData;
     });
-    
 
-const players = {};
+    socket.on('playerMoved', (playerData) => {
+        if (players[playerData.id]) {
+            players[playerData.id].x = playerData.x;
+            players[playerData.id].y = playerData.y;
+        }
+    });
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+    socket.on('playerHurt', (playerData) => {
+        if (players[playerData.id]) {
+            players[playerData.id].hp = playerData.hp;
+            players[playerData.id].exp = playerData.exp;
+        }
+    });
 
-socket.on('currentPlayers', (serverPlayers) => {
-    Object.assign(players, serverPlayers);
-});
+    socket.on('playerLvled', (playerData) => {
+        if (players[playerData.id]) {
+            players[playerData.id].lvl = playerData.lvl;
+        }
+    });
 
-socket.on('newPlayer', (playerData) => {
-    players[playerData.id] = playerData;
-});
+    socket.on('playerDisconnected', (id) => {
+        delete players[id];
+    });
 
-socket.on('playerMoved', (playerData) => {
-    if (players[playerData.id]) {
-        players[playerData.id].x = playerData.x;
-        players[playerData.id].y = playerData.y;
-    }
-});
+    socket.on('chat message', (msg) => {
+        const item = document.createElement('li');
+        item.textContent = msg;
+        messagesList.appendChild(item);
+    });
 
-socket.on('playerDisconnected', (id) => {
-    delete players[id];
-});
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (chatInput.value) {
+            socket.emit('chat message', chatInput.value);
+            chatInput.value = '';
+        }
+    });
 
-// Obsługa klawiatury
-const keys = {};
+    const keys = {};
 
-window.addEventListener('keydown', (e) => {
-    keys[e.key] = true;
-});
+    window.addEventListener('keydown', (e) => {
+        keys[e.key] = true;
+    });
 
-window.addEventListener('keyup', (e) => {
-    keys[e.key] = false;
-});
+    window.addEventListener('keyup', (e) => {
+        keys[e.key] = false;
+    });
 
-function sendMovement() {
-    let movement = { x: 0, y: 0 };
-    if (keys['ArrowUp']) movement.y = -5;
-    if (keys['ArrowDown']) movement.y = 5;
-    if (keys['ArrowLeft']) movement.x = -5;
-    if (keys['ArrowRight']) movement.x = 5;
+    function sendMovement() {
+        let movement = { x: 0, y: 0 };
+        if (keys['ArrowUp']) movement.y = -5;
+        if (keys['ArrowDown']) movement.y = 5;
+        if (keys['ArrowLeft']) movement.x = -5;
+        if (keys['ArrowRight']) movement.x = 5;
 
-    if (movement.x !== 0 || movement.y !== 0) {
-        socket.emit('move', movement);
-    }
-}
-
-// Pętla gry
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    for (const id in players) {
-        const player = players[id];
-        if (!player) continue;
-
-        ctx.fillStyle = id === socket.id ? 'orange' : 'gray';
-        ctx.fillRect(player.x, player.y, 50, 50);
-
-        ctx.fillStyle = 'black';
-        ctx.font = '14px Arial';
-        ctx.fillText(`HP: ${player.hp} EXP: ${player.exp}`, player.x, player.y - 10);
+        if (movement.x !== 0 || movement.y !== 0) {
+            socket.emit('move', movement);
+        }
     }
 
-    sendMovement();
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    requestAnimationFrame(gameLoop);
-}
+        for (const id in players) {
+            const player = players[id];
+            if (!player) continue;
 
-gameLoop();
+            ctx.fillStyle = id === socket.id ? 'orange' : 'gray';
+            ctx.fillRect(player.x, player.y, 50, 50);
+
+            ctx.fillStyle = 'black';
+            ctx.font = '14px Arial';
+            ctx.fillText(`HP: ${player.hp} EXP: ${player.exp}`, player.x, player.y - 10);
+            ctx.fillText(`LVL: ${player.lvl}`, player.x, player.y + 70);
+        }
+
+        sendMovement();
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
 </script>
-<div id="chat">
-    <ul id="messages"></ul>
-    <form id="chat-form">
-      <input id="chat-input" autocomplete="off" placeholder="Napisz wiadomość..." />
-      <button>Wyślij</button>
-    </form>
-  </div>
-  
 </body>
 </html>
