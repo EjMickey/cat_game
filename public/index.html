@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Multiplayer Koty</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            display: block;
+            background: #a0e7e5;
+        }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+const players = {};
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+socket.on('currentPlayers', (serverPlayers) => {
+    Object.assign(players, serverPlayers);
+});
+
+socket.on('newPlayer', (playerData) => {
+    players[playerData.id] = playerData;
+});
+
+socket.on('playerMoved', (playerData) => {
+    if (players[playerData.id]) {
+        players[playerData.id].x = playerData.x;
+        players[playerData.id].y = playerData.y;
+    }
+});
+
+socket.on('playerDisconnected', (id) => {
+    delete players[id];
+});
+
+// Obsługa klawiatury
+const keys = {};
+
+window.addEventListener('keydown', (e) => {
+    keys[e.key] = true;
+});
+
+window.addEventListener('keyup', (e) => {
+    keys[e.key] = false;
+});
+
+function sendMovement() {
+    let movement = { x: 0, y: 0 };
+    if (keys['ArrowUp']) movement.y = -5;
+    if (keys['ArrowDown']) movement.y = 5;
+    if (keys['ArrowLeft']) movement.x = -5;
+    if (keys['ArrowRight']) movement.x = 5;
+
+    if (movement.x !== 0 || movement.y !== 0) {
+        socket.emit('move', movement);
+    }
+}
+
+// Pętla gry
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (const id in players) {
+        const player = players[id];
+        if (!player) continue;
+
+        ctx.fillStyle = id === socket.id ? 'orange' : 'gray';
+        ctx.fillRect(player.x, player.y, 50, 50);
+
+        ctx.fillStyle = 'black';
+        ctx.font = '14px Arial';
+        ctx.fillText(`HP: ${player.hp} EXP: ${player.exp}`, player.x, player.y - 10);
+    }
+
+    sendMovement();
+
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+</body>
+</html>
