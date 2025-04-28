@@ -151,6 +151,7 @@
         click.y = event.clientY
     }
 
+    /*
     function moveTowardPoint(player) {
         let movement = { x: 0, y: 0 };
         if(Math.abs(click.y-(player.y+25)) <= 3) { 
@@ -173,7 +174,7 @@
         socket.emit('move', movement);
       }
       
-    document.addEventListener("click", setClick);
+    document.addEventListener("click", setClick);*/
 
     function gameLoop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -188,7 +189,7 @@
             ctx.font = '14px Arial';
             ctx.fillText(`HP: ${player.hp} EXP: ${player.exp}`, player.x, player.y - 10);
             ctx.fillText(`LVL: ${player.lvl}`, player.x, player.y + 70);
-            moveTowardPoint(player)
+            //moveTowardPoint(player)
         }
 
         sendMovement();
