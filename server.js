@@ -14,28 +14,13 @@ function checkPlayerCollision(player1, player2) {
     );
     if(distance < 50){
         if(player1.armed){
-            player2.hp -= 10*player1.lvl
+            player2.hp -= Math.floor(10+(1.05*player1.lvl))
             if(player2.hp <= 0) {
                 player1.exp_gain += player2.lvl*10
             }
             player1.armed = false
         }
     }
-}
-
-function doBump(player){
-    if(player.x<0){
-        player.speedX += max_speed
-   }
-   if(player.x > 950){
-        player.speedX -= max_speed
-   }
-   if(player.y < 0 ){
-        player.speedY += max_speed
-   }
-   if(player.y > 550){
-        player.speedY -= max_speed
-   }
 }
 
 function checkWallCollision(player){

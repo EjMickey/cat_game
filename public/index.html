@@ -130,10 +130,10 @@
 
     function sendMovement() {
         let movement = { x: 0, y: 0 };
-        if (keys['ArrowUp']) movement.y = -1;
-        if (keys['ArrowDown']) movement.y = 1;
-        if (keys['ArrowLeft']) movement.x = -1;
-        if (keys['ArrowRight']) movement.x = 1;
+        if (keys['ArrowUp'] || keys['w']) movement.y = -1;
+        if (keys['ArrowDown'] || keys['s']) movement.y = 1;
+        if (keys['ArrowLeft'] || keys['a']) movement.x = -1;
+        if (keys['ArrowRight'] || keys['d']) movement.x = 1;
         socket.emit('move', movement);
     }
 
