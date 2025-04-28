@@ -55,7 +55,9 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
-    const players = {};
+    let players = {};
+    let weapons = [];
+    let first_aids = [];
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const chatForm = document.createElement('form');
@@ -87,24 +89,8 @@
         players[playerData.id] = playerData;
     });
 
-    socket.on('playerMoved', (playerData) => {
-        if (players[playerData.id]) {
-            players[playerData.id].x = playerData.x;
-            players[playerData.id].y = playerData.y;
-        }
-    });
-
-    socket.on('playerHurt', (playerData) => {
-        if (players[playerData.id]) {
-            players[playerData.id].hp = playerData.hp;
-            players[playerData.id].exp = playerData.exp;
-        }
-    });
-
-    socket.on('playerLvled', (playerData) => {
-        if (players[playerData.id]) {
-            players[playerData.id].lvl = playerData.lvl;
-        }
+    socket.on('players_update', (playerData) => {
+        players = playerData.players
     });
 
     socket.on('playerDisconnected', (id) => {
@@ -117,6 +103,11 @@
         messagesList.appendChild(item);
         const chatBox = document.getElementById('messages');
         chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    socket.on('power_ups', (data) => {
+        first_aids = data.first_aids;
+        weapons = data.weapons
     });
 
     chatForm.addEventListener('submit', function(e) {
@@ -184,14 +175,37 @@
             if (!player) continue;
 
             const img = id === socket.id ? document.getElementById('player') : document.getElementById('enemy');
-            ctx.drawImage(img, player.x, player.y)
+            ctx.drawImage(img, player.x-25, player.y-25)
             ctx.fillStyle = 'black';
             ctx.font = '14px Arial';
-            ctx.fillText(`HP: ${player.hp} EXP: ${player.exp}`, player.x, player.y - 10);
-            ctx.fillText(`LVL: ${player.lvl}`, player.x, player.y + 70);
+            ctx.fillText(`HP: ${player.hp} EXP: ${player.exp}`, player.x-25, player.y - 35);
+            ctx.fillText(`LVL: ${player.lvl}`, player.x-25, player.y + 45);
+            if(player.armed){
+                ctx.beginPath();
+                ctx.lineWidth = "3";
+                ctx.strokeStyle = "red";
+                ctx.rect(player.x-25, player.y-25, 50, 50);
+                ctx.stroke();
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = "1";
+            }
             //moveTowardPoint(player)
         }
 
+        for(const first_aid of first_aids){
+            ctx.beginPath();
+            ctx.arc(first_aid.x, first_aid.y, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = "green";
+            ctx.fill();
+            ctx.stroke();
+        }
+        for(const weapon of weapons){
+            ctx.beginPath();
+            ctx.arc(weapon.x, weapon.y, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = "red";
+            ctx.fill();
+            ctx.stroke();
+        }
         sendMovement();
         
         requestAnimationFrame(gameLoop);
