@@ -22,14 +22,15 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             padding: 10px;
-            max-height: 200px;
+            max-height: 300px;
             overflow-y: auto;
+            scroll-behavior: smooth;
         }
         #messages {
             list-style-type: none;
             padding: 0;
             margin: 0;
-            max-height: 150px;
+            max-height: 200px;
             overflow-y: auto;
         }
         #chat-input {
@@ -76,6 +77,8 @@
     chatDiv.appendChild(chatForm);
     document.body.appendChild(chatDiv);
 
+    let click = {x: undefined, y:undefined}
+
     socket.on('currentPlayers', (serverPlayers) => {
         Object.assign(players, serverPlayers);
     });
@@ -112,6 +115,8 @@
         const item = document.createElement('li');
         item.textContent = msg;
         messagesList.appendChild(item);
+        const chatBox = document.getElementById('messages');
+        chatBox.scrollTop = chatBox.scrollHeight;
     });
 
     chatForm.addEventListener('submit', function(e) {
@@ -141,6 +146,35 @@
         socket.emit('move', movement);
     }
 
+    function setClick(){
+        click.x = event.clientX 
+        click.y = event.clientY
+    }
+
+    function moveTowardPoint(player) {
+        let movement = { x: 0, y: 0 };
+        if(Math.abs(click.y-(player.y+25)) <= 3) { 
+            movement.y=0 
+            click.y = undefined 
+        }
+        if(Math.abs(click.x-(player.x+25)) <= 3) { 
+            movement.x=0 
+            click.x = undefined 
+        }
+        if(click.x != undefined){
+            if(click.x > player.x+25) { movement.x=1 }
+            else {movement.x=-1}
+        }
+        if(click.y != undefined){
+            if(click.y > player.y+25) { movement.y=1 }
+            else {movement.y=-1}
+        }
+        console.log(click, player)
+        socket.emit('move', movement);
+      }
+      
+    document.addEventListener("click", setClick);
+
     function gameLoop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -154,10 +188,11 @@
             ctx.font = '14px Arial';
             ctx.fillText(`HP: ${player.hp} EXP: ${player.exp}`, player.x, player.y - 10);
             ctx.fillText(`LVL: ${player.lvl}`, player.x, player.y + 70);
+            moveTowardPoint(player)
         }
 
         sendMovement();
-
+        
         requestAnimationFrame(gameLoop);
     }
 
