@@ -7,7 +7,7 @@ const players = {};
 let weapons = [];
 let first_aids = [];
 const input_buffer = {};
-const max_speed = 3;
+const max_speed = 5;
 
 function checkPlayerCollision(player1, player2) {
     const distance = Math.pow(player1.x - player2.x, 2) + Math.pow(player1.y - player2.y, 2)
@@ -120,47 +120,6 @@ io.on('connection', (socket) => {
     socket.emit('currentPlayers', players);
     socket.broadcast.emit('newPlayer', { id: socket.id, ...players[socket.id] });
 
-    setInterval(() => {
-        for (const id in players) {
-            const player = players[id];
-            const movement = input_buffer[id] || { x: 0, y: 0 };
-    
-            if (movement.x === 0) {
-                player.speedX *= 0.95;
-            } else {
-                player.speedX += movement.x;
-            }
-    
-            if (movement.y === 0) {
-                player.speedY *= 0.95;
-            } else {
-                player.speedY += movement.y;
-            }
-    
-            updateSpeed(player);
-    
-            player.x += player.speedX;
-            player.y += player.speedY;
-    
-            checkWallCollision(player);
-            checkWeaponCollision(player);
-            checkAidCollision(player);
-            checkLvlUp(player);
-    
-            for (const otherId in players) {
-                if (otherId !== id) {
-                    const otherPlayer = players[otherId];
-                    checkPlayerCollision(player, otherPlayer);
-                    checkDeath(player, id);
-                }
-            }
-        }
-    
-        io.emit('power_ups', { first_aids, weapons });
-        io.emit('players_update', { players });
-    }, 16);
-    
-
     socket.on('move', (movement) => {
         if (!players[socket.id]) return;
 
@@ -173,6 +132,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('Gracz opuścił:', socket.id);
         delete players[socket.id];
+        delete input_buffer[socket.id];
         io.emit('playerDisconnected', socket.id);
     });
 
@@ -192,6 +152,46 @@ function spawnPowerUp(){
     first_aids.push({x: Math.random()*950, y: Math.random()*550})
     io.emit('power_ups', { first_aids: first_aids, weapons: weapons });
 }
+
+setInterval(() => {
+    for (const id in players) {
+        const player = players[id];
+        const movement = input_buffer[id] || { x: 0, y: 0 };
+
+        if (movement.x === 0) {
+            player.speedX *= 0.95;
+        } else {
+            player.speedX += movement.x;
+        }
+
+        if (movement.y === 0) {
+            player.speedY *= 0.95;
+        } else {
+            player.speedY += movement.y;
+        }
+
+        updateSpeed(player);
+
+        player.x += player.speedX;
+        player.y += player.speedY;
+
+        checkWallCollision(player);
+        checkWeaponCollision(player);
+        checkAidCollision(player);
+        checkLvlUp(player);
+
+        for (const otherId in players) {
+            if (otherId !== id) {
+                const otherPlayer = players[otherId];
+                checkPlayerCollision(player, otherPlayer);
+                checkDeath(player, id);
+            }
+        }
+    }
+
+    io.emit('power_ups', { first_aids, weapons });
+    io.emit('players_update', { players });
+}, 16);
 
 setInterval(() =>{
     spawnPowerUp()
