@@ -45,10 +45,10 @@
 </head>
 <body>
 <div style="display:none;">
-    <img id="enemy" width="220" height="277" src="img/cat_enemy.jpg">
+    <img id="enemy" width="50" height="50" src="img/cat_enemy.jpg">
 </div>
 <div style="display:none;">
-    <img id="player" width="220" height="277" src="img/cat_player.png">
+    <img id="player" width="50" height="50" src="img/cat_player.png">
 </div>
 <canvas id="gameCanvas" width="1000" height="600"></canvas>
 
@@ -130,10 +130,12 @@
 
     function sendMovement() {
         let movement = { x: 0, y: 0 };
+
         if (keys['ArrowUp'] || keys['w']) movement.y = -1;
         if (keys['ArrowDown'] || keys['s']) movement.y = 1;
         if (keys['ArrowLeft'] || keys['a']) movement.x = -1;
         if (keys['ArrowRight'] || keys['d']) movement.x = 1;
+
         socket.emit('move', movement);
     }
 
@@ -206,12 +208,14 @@
             ctx.fill();
             ctx.stroke();
         }
-        sendMovement();
-        
         requestAnimationFrame(gameLoop);
     }
 
     gameLoop();
+
+    setInterval(() => {
+        sendMovement();
+    }, 16)
 </script>
 </body>
 </html>

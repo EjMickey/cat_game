@@ -6,13 +6,12 @@ const io = require('socket.io')(http);
 const players = {};
 let weapons = [];
 let first_aids = [];
+const input_buffer = {};
 const max_speed = 3;
 
 function checkPlayerCollision(player1, player2) {
-    const distance = Math.sqrt(
-        Math.pow(player1.x - player2.x, 2) + Math.pow(player1.y - player2.y, 2)
-    );
-    if(distance < 50){
+    const distance = Math.pow(player1.x - player2.x, 2) + Math.pow(player1.y - player2.y, 2)
+    if(distance < 2500){
         if(player1.armed){
             player2.hp -= Math.floor(10+(1.05*player1.lvl))
             if(player2.hp <= 0) {
@@ -24,16 +23,16 @@ function checkPlayerCollision(player1, player2) {
 }
 
 function checkWallCollision(player){
-   if(player.x<0){
+   if(player.x<25){
         player.speedX += max_speed
    }
-   if(player.x > 950){
+   if(player.x > 975){
         player.speedX -= max_speed
    }
-   if(player.y < 0 ){
+   if(player.y < 25 ){
         player.speedY += max_speed
    }
-   if(player.y > 550){
+   if(player.y > 575){
         player.speedY -= max_speed
    }
 }
@@ -41,10 +40,8 @@ function checkWallCollision(player){
 function checkWeaponCollision(player) {
     let updated_weapons = [];
     for (const weapon of weapons) {
-        const distance = Math.sqrt(
-            Math.pow(player.x - weapon.x, 2) + Math.pow(player.y - weapon.y, 2)
-        );
-        if (distance < 30) {
+        const distance = Math.pow(player.x - weapon.x, 2) + Math.pow(player.y - weapon.y, 2)
+        if (distance < 900) {
             player.armed = true;
         } else {
             updated_weapons.push(weapon);
@@ -56,10 +53,8 @@ function checkWeaponCollision(player) {
 function checkAidCollision(player) {
     let updated_first_aids = [];
     for (const first_aid of first_aids) {
-        const distance = Math.sqrt(
-            Math.pow(player.x - first_aid.x, 2) + Math.pow(player.y - first_aid.y, 2)
-        );
-        if (distance < 30) {
+        const distance = Math.pow(player.x - first_aid.x, 2) + Math.pow(player.y - first_aid.y, 2)
+        if (distance < 900) {
             player.hp += 10;
             if(player.hp>player.max_hp){
                 player.hp = player.max_hp
@@ -121,48 +116,60 @@ function addPlayer(socket_id){
 io.on('connection', (socket) => {
     console.log('Nowy gracz:', socket.id);
 
-    // Dodaj nowego gracza
     addPlayer(socket.id)
-
-    // Wyślij aktualny stan do nowego gracza
     socket.emit('currentPlayers', players);
-
-    // Poinformuj wszystkich o nowym graczu
     socket.broadcast.emit('newPlayer', { id: socket.id, ...players[socket.id] });
 
-    socket.on('move', (movement) => {
-        if (players[socket.id]) {
-            if (movement.x == 0) {
-                players[socket.id].speedX *= 0.95;
-            }
-            if (movement.y == 0) {
-                players[socket.id].speedY *= 0.95;
-            }
-            players[socket.id].speedX += movement.x;
-            players[socket.id].speedY += movement.y;
-            updateSpeed(players[socket.id]);
-            players[socket.id].x += players[socket.id].speedX;
-            players[socket.id].y += players[socket.id].speedY;
+    setInterval(() => {
+        for (const id in players) {
+            const player = players[id];
+            const movement = input_buffer[id] || { x: 0, y: 0 };
     
-            checkWallCollision(players[socket.id]);
-            checkWeaponCollision(players[socket.id]);
-            checkAidCollision(players[socket.id]);
-            checkLvlUp(players[socket.id]);
+            if (movement.x === 0) {
+                player.speedX *= 0.95;
+            } else {
+                player.speedX += movement.x;
+            }
     
-            for (const id in players) {
-                if (id !== socket.id) {
-                    const otherPlayer = players[id];
-                    checkPlayerCollision(players[socket.id], otherPlayer);
-                    checkDeath(players[socket.id], socket.id)
+            if (movement.y === 0) {
+                player.speedY *= 0.95;
+            } else {
+                player.speedY += movement.y;
+            }
+    
+            updateSpeed(player);
+    
+            player.x += player.speedX;
+            player.y += player.speedY;
+    
+            checkWallCollision(player);
+            checkWeaponCollision(player);
+            checkAidCollision(player);
+            checkLvlUp(player);
+    
+            for (const otherId in players) {
+                if (otherId !== id) {
+                    const otherPlayer = players[otherId];
+                    checkPlayerCollision(player, otherPlayer);
+                    checkDeath(player, id);
                 }
             }
-    
-            io.emit('power_ups', { first_aids: first_aids, weapons: weapons });
-            io.emit('players_update', { players: players });
         }
-    });
     
-    // Rozłączenie
+        io.emit('power_ups', { first_aids, weapons });
+        io.emit('players_update', { players });
+    }, 16);
+    
+
+    socket.on('move', (movement) => {
+        if (!players[socket.id]) return;
+
+        movement.x = Math.max(-1, Math.min(1, movement.x));
+        movement.y = Math.max(-1, Math.min(1, movement.y));
+
+        input_buffer[socket.id] = movement;
+    })
+
     socket.on('disconnect', () => {
         console.log('Gracz opuścił:', socket.id);
         delete players[socket.id];
