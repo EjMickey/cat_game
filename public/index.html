@@ -9,7 +9,7 @@
             overflow: hidden;
             background-color: #f0f0f0;
         }
-        canvas {
+        #gameCanvas {
             display: block;
             background: #a0e7e5;
         }
@@ -132,6 +132,8 @@
 </div>
 
 <canvas id="gameCanvas" width="1000" height="600"></canvas>
+</br>
+<canvas id="xpCanvas" width="1000" height="50"></canvas>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -141,6 +143,7 @@
     let first_aids = [];
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const xpCanvas = document.getElementById('xpCanvas').getContext('2d');
     const chatForm = document.createElement('form');
     const chatInput = document.createElement('input');
     const chatButton = document.createElement('button');
@@ -195,6 +198,10 @@
         players = playerData.players
     });
 
+    socket.on('exp_update', (playerData) => {
+        updateXPBar(playerData)
+    });
+
     socket.on('playerDisconnected', (id) => {
         delete players[id];
     });
@@ -247,6 +254,16 @@
         click.y = event.clientY
     }
 
+    function updateXPBar(){
+        const player = players[socket.id];
+        if (!player) return;
+        xpCanvas.clearRect(0, 0, 1000, 50);
+        xpCanvas.fillStyle = "purple"
+        xpCanvas.lineWidth = "6";
+        xpCanvas.fillRect(0,0, 1000*player.exp/(Math.pow(2, player.lvl) + 8),50)
+        xpCanvas.rect(0,0, 1000,50)
+        xpCanvas.stroke()
+    }
     /*
     function moveTowardPoint(player) {
         let movement = { x: 0, y: 0 };
@@ -344,12 +361,13 @@
             ctx.stroke();
         }
         requestAnimationFrame(gameLoop);
-    }
-
+        
+    }  
     gameLoop();
 
     setInterval(() => {
         sendMovement();
+        //updateXPBar();
     }, 16)
 </script>
 </body>
