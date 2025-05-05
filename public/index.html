@@ -41,15 +41,96 @@
             padding: 5px;
             margin-left: 5px;
         }
+        .avatar-option {
+            display: inline-block;
+            margin: 10px;
+            cursor: pointer;
+            text-align: center;
+          }
+        
+          .avatar-option input[type="radio"] {
+            display: none;
+          }
+        
+          .avatar-option img {
+            width: 80px;
+            height: 80px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            transition: 0.3s;
+          }
+        
+          .avatar-option input[type="radio"]:checked + img {
+            border-color: #007bff;
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+          }
     </style>
 </head>
 <body>
 <div style="display:none;">
-    <img id="enemy" width="50" height="50" src="img/cat_enemy.jpg">
+    <img id="banana" width="50" height="50" src="img/banana.png">
 </div>
 <div style="display:none;">
-    <img id="player" width="50" height="50" src="img/cat_player.png">
+    <img id="garf" width="50" height="50" src="img/garf.png">
 </div>
+<div style="display:none;">
+    <img id="gaze" width="50" height="50" src="img/gaze.png">
+</div>
+<div style="display:none;">
+    <img id="huh" width="50" height="50" src="img/huh.png">
+</div>
+
+<div id="start-screen" style="
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+">
+    <form id="player-form" style="background: white; padding: 20px; border-radius: 10px;">
+        <label>Imię: <input type="text" id="player-name" required minlength="1" maxlength="16"/></label><br><br>
+
+        <label>Kolor kota: 
+            <input type="color" id="cat-color" value="#ff8800" />
+        </label><br><br>
+
+        <label>Flaga kraju:
+            <select id="player-flag">
+                <option value="pl">🇵🇱 Polska</option>
+                <option value="us">🇺🇸 USA</option>
+                <option value="de">🇩🇪 Niemcy</option>
+                <option value="fr">🇫🇷 Francja</option>
+                <option value="jp">🇯🇵 Japonia</option>
+            </select>
+        </label><br><br>
+
+        <label class="avatar-option">
+            <input type="radio" name="avatar" value="banana">
+            <img src="img/banana.png" alt="Banana">
+          </label>
+        
+          <label class="avatar-option">
+            <input type="radio" name="avatar" value="garf">
+            <img src="img/garf.png" alt="Garf">
+          </label>
+        
+          <label class="avatar-option">
+            <input type="radio" name="avatar" value="gaze">
+            <img src="img/gaze.png" alt="Gaze">
+          </label>
+
+          <label class="avatar-option">
+            <input type="radio" name="avatar" value="huh">
+            <img src="img/huh.png" alt="Huh">
+          </label>
+        </br>
+        <button type="submit">Dołącz do gry</button>
+    </form>
+</div>
+
 <canvas id="gameCanvas" width="1000" height="600"></canvas>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -65,6 +146,10 @@
     const chatButton = document.createElement('button');
     const messagesList = document.createElement('ul');
     const chatDiv = document.createElement('div');
+    const startScreen = document.getElementById('start-screen');
+    const playerForm = document.getElementById('player-form');
+    const playerNameInput = document.getElementById('player-name');
+
 
     chatForm.id = 'chat-form';
     chatInput.id = 'chat-input';
@@ -78,6 +163,23 @@
     chatDiv.appendChild(messagesList);
     chatDiv.appendChild(chatForm);
     document.body.appendChild(chatDiv);
+
+    playerForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+    
+        const name = playerNameInput.value.trim();
+        const color = document.getElementById('cat-color').value;
+        const flag = document.getElementById('player-flag').value;
+        const avatar = document.querySelector('input[name="avatar"]:checked')?.value;
+        if (name.length >= 1 && name.length <= 16) {
+            socket.emit('join_request', { name, color, flag, avatar });
+        }
+    });
+    
+    socket.on('join_accepted', (playerData) => {
+        startScreen.style.display = 'none';
+        players[socket.id] = playerData;
+    });
 
     let click = {x: undefined, y:undefined}
 
@@ -113,6 +215,7 @@
     chatForm.addEventListener('submit', function(e) {
         e.preventDefault();
         if (chatInput.value) {
+            message = 
             socket.emit('chat message', chatInput.value);
             chatInput.value = '';
         }
@@ -176,12 +279,44 @@
             const player = players[id];
             if (!player) continue;
 
-            const img = id === socket.id ? document.getElementById('player') : document.getElementById('enemy');
-            ctx.drawImage(img, player.x-25, player.y-25)
-            ctx.fillStyle = 'black';
-            ctx.font = '14px Arial';
-            ctx.fillText(`HP: ${player.hp} EXP: ${player.exp}`, player.x-25, player.y - 35);
-            ctx.fillText(`LVL: ${player.lvl}`, player.x-25, player.y + 45);
+            const img = document.getElementById(player.avatar)
+            ctx.drawImage(img, player.x - 25, player.y - 25);
+
+            // Obwódka kolorem gracza
+            ctx.fillStyle = player.color || 'black';
+            ctx.font = '15px Arial'; 
+            ctx.globalAlpha = 1; // przezroczystość koloru
+            ctx.lineWidth = 1;
+            // Flaga
+            const flagMap = {
+                pl: '🇵🇱',
+                us: '🇺🇸',
+                de: '🇩🇪',
+                fr: '🇫🇷',
+                jp: '🇯🇵'
+            };
+            
+            const flagEmoji = flagMap[player.flag?.toLowerCase()] || '';
+            //ctx.fillText(flagEmoji, player.x - 10, player.y - 30);
+
+            
+            let hp_bar = '['
+            for(let i=0;i<10;i++){
+                if(player.max_hp*i/10 < player.hp){
+                    hp_bar+= '|'
+                }
+                else{
+                    hp_bar += ' '
+                }
+            }
+            hp_bar += ']'
+            ctx.fillText(`${hp_bar} [${player.lvl}]`, player.x-30, player.y + 45 );
+            //ctx.strokeText(`${hp_bar} [${player.lvl}]`, player.x-35, player.y + 45 );
+            ctx.fillText(`${player.name} `, player.x-(player.name.length*4), player.y- 35);
+            //ctx.strokeText(`${player.name} `, player.x-40, player.y- 35);
+            //ctx.globalAlpha = 1.0;
+            ctx.strokeStyle = 'black';
+
             if(player.armed){
                 ctx.beginPath();
                 ctx.lineWidth = "3";

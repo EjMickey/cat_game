@@ -93,33 +93,42 @@ function updateSpeed(player){
 }
 
 function checkDeath(player, socket_id){
-    if(player.hp<=0){
-        addPlayer(socket_id)
+    if(player.hp <= 0){
+        const { name, color, flag, avatar } = player;
+        addPlayer(socket_id, name, color, flag, avatar);
     }
 }
 
-function addPlayer(socket_id){
+function addPlayer(socket_id, name, color, flag, avatar) {
     players[socket_id] = {
-        x: Math.random() * 700,
-        y: Math.random() * 500,
-        hp: 40,
-        max_hp: 40,
-        exp: 0,
-        lvl: 1,
+        x: Math.random() * 900 + 50,
+        y: Math.random() * 500 + 50,
         speedX: 0,
         speedY: 0,
+        hp: 10,
+        exp: 0,
+        exp_gain: 0,
+        lvl: 1,
+        max_hp: 10,
         armed: false,
-        exp_gain: 0
+        name: name || "Macius2007PL",
+        color: /^#[0-9A-F]{6}$/i.test(color) ? color : '#000000',
+        flag: flag || 'pl',
+        avatar: avatar || null
     };
 }
 
 io.on('connection', (socket) => {
     console.log('Nowy gracz:', socket.id);
 
-    addPlayer(socket.id)
-    socket.emit('currentPlayers', players);
-    socket.broadcast.emit('newPlayer', { id: socket.id, ...players[socket.id] });
-
+    socket.on('join_request', ({ name, color, flag, avatar }) => {
+        if (typeof name !== 'string' || name.length < 1 || name.length > 16) return;
+        addPlayer(socket.id, name, color, flag, avatar);
+        socket.emit('join_accepted', players[socket.id]);
+        socket.emit('currentPlayers', players);
+        socket.broadcast.emit('newPlayer', { id: socket.id, ...players[socket.id] });
+    });
+    
     socket.on('move', (movement) => {
         if (!players[socket.id]) return;
 
@@ -137,7 +146,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on('chat message', (msg) => {
-        io.emit('chat message', msg);
+        message = '['+players[socket.id].name+']: '+ msg
+        io.emit('chat message', message);
       });
 });
 
