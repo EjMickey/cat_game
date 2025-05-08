@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Multiplayer Koty</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!--images-->
+<div style="display:none;">
+    <img id="banana" src="resources/img/banana.png" width="50" height="50">
+    <img id="garf" src="resources/img/garf.png" width="50" height="50">
+    <img id="gaze" src="resources/img/gaze.png" width="50" height="50">
+    <img id="huh" src="resources/img/huh.png" width="50" height="50">
+    <img id="explosion_sprite" src="resources/img/explosion_sprite.png">
+</div>
+
+<!--music-->
+<audio id="rawdogger">
+    <source src="resources/sounds/rawdogger.mp3" type="audio/mp3">
+</audio>
+<audio id="manian">
+    <source src="resources/sounds/manian.mp3" type="audio/mp3">
+</audio>
+<audio id="hasselhoff">
+    <source src="resources/sounds/hasselhoff.mp3" type="audio/mp3">
+</audio>
+<audio id="pump_it_up">
+    <source src="resources/sounds/pump_it_up.mp3" type="audio/mp3">
+</audio>
+
+<!--sounds-->
+<audio id="explosion">
+    <source src="resources/sounds/explosion.mp3" type="audio/mp3">
+</audio>
+
+<div id="start-screen">
+    <form id="player-form">
+        <label>Imię: <input type="text" id="player-name" required minlength="1" maxlength="16"></label><br><br>
+        <label>Kolor kota: <input type="color" id="cat-color" value="#ff8800"></label><br><br>
+        <label>Flaga kraju:
+            <select id="player-flag">
+                <option value="pl">🇵🇱 Polska</option>
+                <option value="us">🇺🇸 USA</option>
+                <option value="de">🇩🇪 Niemcy</option>
+                <option value="fr">🇫🇷 Francja</option>
+                <option value="jp">🇯🇵 Japonia</option>
+            </select>
+        </label><br><br>
+
+        <label class="avatar-option">
+            <input type="radio" name="avatar" value="banana">
+            <img src="resources/img/banana.png" alt="Banana">
+        </label>
+        <label class="avatar-option">
+            <input type="radio" name="avatar" value="garf">
+            <img src="resources/img/garf.png" alt="Garf">
+        </label>
+        <label class="avatar-option">
+            <input type="radio" name="avatar" value="gaze">
+            <img src="resources/img/gaze.png" alt="Gaze">
+        </label>
+        <label class="avatar-option">
+            <input type="radio" name="avatar" value="huh">
+            <img src="resources/img/huh.png" alt="Huh">
+        </label><br>
+
+        <button type="submit">Dołącz do gry</button>
+    </form>
+</div>
+
+<canvas id="gameCanvas" width="1000" height="600"></canvas>
+<br>
+<canvas id="xpCanvas" width="1000" height="50"></canvas>
+<script src="/socket.io/socket.io.js"></script>
+<script type="module" src="main.js"></script>
+</body>
+</html>

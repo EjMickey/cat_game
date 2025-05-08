@@ -1,0 +1,83 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #f0f0f0;
+}
+
+#gameCanvas {
+    display: block;
+    background: #a0e7e5;
+}
+
+#chat {
+    position: absolute;
+    top: 10px;
+    left: 1020px;
+    width: 300px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+#messages {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#chat-input {
+    width: calc(100% - 60px);
+    padding: 5px;
+}
+
+button {
+    padding: 5px;
+    margin-left: 5px;
+}
+
+#start-screen {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+#player-form {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.avatar-option {
+    display: inline-block;
+    margin: 10px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.avatar-option input[type="radio"] {
+    display: none;
+}
+
+.avatar-option img {
+    width: 80px;
+    height: 80px;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+
+.avatar-option input[type="radio"]:checked + img {
+    border-color: #007bff;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+}
