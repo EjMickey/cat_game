@@ -41,7 +41,7 @@ playerForm.addEventListener('submit', (e) => {
     const color = document.getElementById('cat-color').value;
     const flag = document.getElementById('player-flag').value;
     const avatar = document.querySelector('input[name="avatar"]:checked')?.value;
-    if (name.length >= 1 && name.length <= 16) {
+    if (name.length >= 1 && name.length <= 16 && avatar !== undefined) {
         socket.emit('join_request', { name, color, flag, avatar });
     }
 });
@@ -49,6 +49,12 @@ playerForm.addEventListener('submit', (e) => {
 socket.on('join_accepted', (playerData) => {
     startScreen.style.display = 'none';
     players[socket.id] = playerData;
+    gameLoop()
+    
+    setInterval(() => {
+        sendMovement();
+        //updateXPBar();
+    }, 16)
 });
 
 let click = {x: undefined, y:undefined}
@@ -94,8 +100,7 @@ socket.on('power_ups', (data) => {
 chatForm.addEventListener('submit', function(e) {
     e.preventDefault();
     if (chatInput.value) {
-        message = 
-        socket.emit('chat message', chatInput.value);
+        let message = socket.emit('chat message', chatInput.value);
         chatInput.value = '';
     }
 });
@@ -113,10 +118,10 @@ window.addEventListener('keyup', (e) => {
 function sendMovement() {
     let movement = { x: 0, y: 0 };
 
-    if (keys['ArrowUp'] || keys['w']) movement.y = -1;
-    if (keys['ArrowDown'] || keys['s']) movement.y = 1;
-    if (keys['ArrowLeft'] || keys['a']) movement.x = -1;
-    if (keys['ArrowRight'] || keys['d']) movement.x = 1;
+    if (keys['ArrowUp'] || keys['w']) movement.y = 1;
+    if (keys['ArrowDown'] || keys['s']) movement.y = -1;
+    if (keys['ArrowLeft'] || keys['a']) movement.x = 1;
+    if (keys['ArrowRight'] || keys['d']) movement.x = -1;
 
     socket.emit('move', movement);
 }
@@ -163,71 +168,125 @@ document.addEventListener("click", setClick);*/
 
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+    
+    if (!players[socket.id]) return;
     for (const id in players) {
         const player = players[id];
         if (!player) continue;
 
         const img = document.getElementById(player.avatar)
-        ctx.drawImage(img, player.x - 25, player.y - 25);
+        if(id === socket.id)
+        {
+            ctx.drawImage(img, 500 - 25, 300 -25);
 
-        // Obwódka kolorem gracza
-        ctx.fillStyle = player.color || 'black';
-        ctx.font = '15px Arial'; 
-        ctx.globalAlpha = 1; // przezroczystość koloru
-        ctx.lineWidth = 1;
-        // Flaga
-        const flagMap = {
-            pl: '🇵🇱',
-            us: '🇺🇸',
-            de: '🇩🇪',
-            fr: '🇫🇷',
-            jp: '🇯🇵'
-        };
-        
-        const flagEmoji = flagMap[player.flag?.toLowerCase()] || '';
-        //ctx.fillText(flagEmoji, player.x - 10, player.y - 30);
-
-        
-        let hp_bar = '['
-        for(let i=0;i<10;i++){
-            if(player.max_hp*i/10 < player.hp){
-                hp_bar+= '|'
+            ctx.fillStyle = player.color || 'black';
+            ctx.font = '15px Arial'; 
+            ctx.globalAlpha = 1; // przezroczystość koloru
+            ctx.lineWidth = 1;
+            // Flaga
+            const flagMap = {
+                pl: '🇵🇱',
+                us: '🇺🇸',
+                de: '🇩🇪',
+                fr: '🇫🇷',
+                jp: '🇯🇵'
+            };
+            
+            const flagEmoji = flagMap[player.flag?.toLowerCase()] || '';
+            //ctx.fillText(flagEmoji, player.x - 10, player.y - 30);
+    
+            
+            let hp_bar = '['
+            for(let i=0;i<10;i++){
+                if(player.max_hp*i/10 < player.hp){
+                    hp_bar+= '|'
+                }
+                else{
+                    hp_bar += ' '
+                }
             }
-            else{
-                hp_bar += ' '
+            hp_bar += ']'
+            ctx.fillText(`${hp_bar} [${player.lvl}]`, 500-30, 300 + 45 );
+            //ctx.strokeText(`${hp_bar} [${player.lvl}]`, player.x-35, player.y + 45 );
+            ctx.fillText(`${player.name} `, 500-(player.name.length*4), 300- 35);
+            //ctx.strokeText(`${player.name} `, player.x-40, player.y- 35);
+            //ctx.globalAlpha = 1.0;
+            ctx.strokeStyle = 'black';
+    
+            if(player.armed){
+                ctx.beginPath();
+                ctx.lineWidth = "3";
+                ctx.strokeStyle = "red";
+                ctx.rect(500 -25, 300 -25, 50, 50);
+                ctx.stroke();
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = "1";
             }
+            //moveTowardPoint(player)
         }
-        hp_bar += ']'
-        ctx.fillText(`${hp_bar} [${player.lvl}]`, player.x-30, player.y + 45 );
-        //ctx.strokeText(`${hp_bar} [${player.lvl}]`, player.x-35, player.y + 45 );
-        ctx.fillText(`${player.name} `, player.x-(player.name.length*4), player.y- 35);
-        //ctx.strokeText(`${player.name} `, player.x-40, player.y- 35);
-        //ctx.globalAlpha = 1.0;
-        ctx.strokeStyle = 'black';
-
-        if(player.armed){
-            ctx.beginPath();
-            ctx.lineWidth = "3";
-            ctx.strokeStyle = "red";
-            ctx.rect(player.x-25, player.y-25, 50, 50);
-            ctx.stroke();
-            ctx.strokeStyle = "black";
-            ctx.lineWidth = "1";
+        else
+        {
+            let relative_pos = {x: 500 - (player.x-players[socket.id].x)-25, y: 300 - (player.y-players[socket.id].y) - 25}
+            ctx.drawImage(img, relative_pos.x, relative_pos.y);
+            // Obwódka kolorem gracza
+            ctx.fillStyle = player.color || 'black';
+            ctx.font = '15px Arial'; 
+            ctx.globalAlpha = 1; // przezroczystość koloru
+            ctx.lineWidth = 1;
+            // Flaga
+            const flagMap = {
+                pl: '🇵🇱',
+                us: '🇺🇸',
+                de: '🇩🇪',
+                fr: '🇫🇷',
+                jp: '🇯🇵'
+            };
+            
+            const flagEmoji = flagMap[player.flag?.toLowerCase()] || '';
+            //ctx.fillText(flagEmoji, player.x - 10, player.y - 30);
+    
+            
+            let hp_bar = '['
+            for(let i=0;i<10;i++){
+                if(player.max_hp*i/10 < player.hp){
+                    hp_bar+= '|'
+                }
+                else{
+                    hp_bar += ' '
+                }
+            }
+            hp_bar += ']'
+            ctx.fillText(`${hp_bar} [${player.lvl}]`, relative_pos.x, relative_pos.y + 65 );
+            //ctx.strokeText(`${hp_bar} [${player.lvl}]`, player.x-35, player.y + 45 );
+            ctx.fillText(`${player.name} `, relative_pos.x-(player.name.length*4)+15, relative_pos.y-15);
+            //ctx.strokeText(`${player.name} `, player.x-40, player.y- 35);
+            //ctx.globalAlpha = 1.0;
+            ctx.strokeStyle = 'black';
+    
+            if(player.armed){
+                ctx.beginPath();
+                ctx.lineWidth = "3";
+                ctx.strokeStyle = "red";
+                ctx.rect(relative_pos.x, relative_pos.y, 50, 50);
+                ctx.stroke();
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = "1";
+            }
+            //moveTowardPoint(player)
         }
-        //moveTowardPoint(player)
     }
+
 
     for(const first_aid of first_aids){
         ctx.beginPath();
-        ctx.arc(first_aid.x, first_aid.y, 5, 0, 2 * Math.PI);
+        ctx.arc(500+(players[socket.id].x-first_aid.x), 300+(players[socket.id].y-first_aid.y), 5, 0, 2 * Math.PI);
         ctx.fillStyle = "green";
         ctx.fill();
         ctx.stroke();
     }
     for(const weapon of weapons){
         ctx.beginPath();
-        ctx.arc(weapon.x, weapon.y, 5, 0, 2 * Math.PI);
+        ctx.arc(500+(players[socket.id].x-weapon.x), 300+(players[socket.id].y-weapon.y), 5, 0, 2 * Math.PI);
         ctx.fillStyle = "red";
         ctx.fill();
         ctx.stroke();
@@ -240,14 +299,8 @@ function gameLoop() {
         ctx.drawImage(
             params.img,
             params.sx, params.sy, params.sw, params.sh,
-            params.dx, params.dy, params.dw, params.dh
+            500+(players[socket.id].x-params.dx), 300+(players[socket.id].y-params.dy), params.dw, params.dh
         );
     }    
     requestAnimationFrame(gameLoop);
-}  
-gameLoop();
-
-setInterval(() => {
-    sendMovement();
-    //updateXPBar();
-}, 16)
+}
