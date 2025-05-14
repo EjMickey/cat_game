@@ -18,7 +18,7 @@ function addPlayer(socket_id, name, color, flag, avatar) {
         name: name || "Macius2007PL",
         color: /^#[0-9A-F]{6}$/i.test(color) ? color : '#000000',
         flag: flag || 'pl',
-        avatar: avatar || null
+        avatar: avatar || "garf"
     };
 }
 

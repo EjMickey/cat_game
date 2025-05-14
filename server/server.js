@@ -44,7 +44,7 @@ io.on('connection', (socket) => {
     console.log('Nowy gracz:', socket.id);
 
     socket.on('join_request', ({ name, color, flag, avatar }) => {
-        if (typeof name !== 'string' || name.length < 1 || name.length > 16) return;
+        if (typeof name !== 'string' || name.length < 1 || name.length > 16 || avatar === undefined) return;
         objects.addPlayer(socket.id, name, color, flag, avatar);
         socket.emit('join_accepted', objects.players[socket.id]);
         socket.emit('currentPlayers', objects.players);
