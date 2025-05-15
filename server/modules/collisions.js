@@ -1,27 +1,31 @@
+const { world_width, world_height } = require("./world")
+
 function checkPlayerCollision(player1, player2) {
-    const distance = Math.pow(player1.x - player2.x, 2) + Math.pow(player1.y - player2.y, 2)
-    if(distance < 2500){
-        if(player1.armed){
-            player2.hp -= Math.floor(10+(1.05*player1.lvl))
-            if(player2.hp <= 0) {
-                player1.exp_gain += player2.lvl*10
+    if(player1.guild !== player2.guild){
+        const distance = Math.pow(player1.x - player2.x, 2) + Math.pow(player1.y - player2.y, 2)
+        if(distance < 2500){
+            if(player1.armed){
+                player2.hp -= Math.floor(10+(1.05*player1.lvl))
+                if(player2.hp <= 0) {
+                    player1.exp_gain += player2.lvl*10
+                }
+                player1.armed = false
             }
-            player1.armed = false
         }
     }
 }
 
 function checkWallCollision(player){
-   if(player.x<25){
+   if(player.x<0){
         player.speedX += player.max_speed/2
    }
-   if(player.x > 975){
+   if(player.x > world_width){
         player.speedX -= player.max_speed/2
    }
-   if(player.y < 25 ){
+   if(player.y < 0){
         player.speedY += player.max_speed/2
    }
-   if(player.y > 575){
+   if(player.y > world_height){
         player.speedY -= player.max_speed/2
    }
 }
