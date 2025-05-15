@@ -193,7 +193,6 @@ function drawMiniMap()
 
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawMiniMap()
     if (!players[socket.id]) return;
     for (const id in players) {
         const player = players[id];
@@ -332,5 +331,6 @@ function gameLoop() {
             500+(players[socket.id].x-params.dx), 300+(players[socket.id].y-params.dy), params.dw, params.dh
         );
     }
+    drawMiniMap()
     requestAnimationFrame(gameLoop);
 }
