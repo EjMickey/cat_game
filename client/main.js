@@ -166,9 +166,34 @@ function moveTowardPoint(player) {
     
 document.addEventListener("click", setClick);*/
 
+function drawMiniMap()
+{
+    ctx.beginPath();
+    ctx.lineWidth = "2";
+    ctx.strokeStyle = "black";
+    ctx.rect(850, 450, 130, 130);
+    ctx.stroke();
+    ctx.lineWidth = "0";
+    for(const id in players){
+        const player = players[id]
+        if(player.guild===players[socket.id].guild){
+            ctx.fillStyle = "#00FF00";
+            ctx.strokeStyle = "#00FF00";
+        }
+        else{
+            ctx.fillStyle = "red";
+            ctx.strokeStyle = "red";
+        }
+        ctx.beginPath();
+        ctx.arc(850+130*((1000-player.x)/1000), 450+130*((1000-player.y)/1000), 2, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.stroke();
+    }
+}
+
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+    drawMiniMap()
     if (!players[socket.id]) return;
     for (const id in players) {
         const player = players[id];
@@ -229,7 +254,12 @@ function gameLoop() {
             let relative_pos = {x: 500 - (player.x-players[socket.id].x)-25, y: 300 - (player.y-players[socket.id].y) - 25}
             ctx.drawImage(img, relative_pos.x, relative_pos.y);
             // Obwódka kolorem gracza
-            ctx.fillStyle = player.color || 'black';
+            if(player.guild === players[socket.id].guild){
+                ctx.fillStyle = '#00FF00' || 'black';
+            }
+            else{
+                ctx.fillStyle = 'red' || 'black';
+            }
             ctx.font = '15px Arial'; 
             ctx.globalAlpha = 1; // przezroczystość koloru
             ctx.lineWidth = 1;
@@ -301,6 +331,6 @@ function gameLoop() {
             params.sx, params.sy, params.sw, params.sh,
             500+(players[socket.id].x-params.dx), 300+(players[socket.id].y-params.dy), params.dw, params.dh
         );
-    }    
+    }
     requestAnimationFrame(gameLoop);
 }
